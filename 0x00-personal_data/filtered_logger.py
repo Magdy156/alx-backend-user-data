@@ -51,6 +51,7 @@ def get_logger() -> logging.Logger:
 
     return logger
 
+
 def get_db() -> mysql.connector.connection.MySQLConnection:
     """ Connection to MySQL """
     db_connect = mysql.connector.connect(
