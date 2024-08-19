@@ -2,7 +2,7 @@
 """A simple Flask app
 """
 import logging
-from flask import Flask, jsonify, request, abort, redirect
+from flask import Flask, jsonify, request, abort, redirect, make_response
 from auth import Auth
 logging.disable(logging.WARNING)
 AUTH = Auth()
@@ -51,7 +51,8 @@ def logout() -> str:
     session_id = request.cookies.get("session_id")
     user = AUTH.get_user_from_session_id(session_id)
     if user is None:
-        abort(403)
+        response = make_response("Forbidden", 403)
+        return response
     AUTH.destroy_session(user.id)
     # Redirect to the home route
     return redirect("/")
@@ -64,7 +65,8 @@ def profile() -> str:
     session_id = request.cookies.get("session_id")
     user = AUTH.get_user_from_session_id(session_id)
     if user is None:
-        abort(403)
+        response = make_response("Forbidden", 403)
+        return response
     return jsonify({"email": user.email})
 
 
