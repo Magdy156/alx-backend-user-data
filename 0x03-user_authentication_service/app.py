@@ -51,8 +51,7 @@ def logout() -> str:
     session_id = request.cookies.get("session_id")
     user = AUTH.get_user_from_session_id(session_id)
     if user is None:
-        response = make_response("Forbidden", 403)
-        return response
+        abort(403)
     AUTH.destroy_session(user.id)
     # Redirect to the home route
     return redirect("/")
@@ -65,9 +64,20 @@ def profile() -> str:
     session_id = request.cookies.get("session_id")
     user = AUTH.get_user_from_session_id(session_id)
     if user is None:
-        response = make_response("Forbidden", 403)
-        return response
+        abort(403)
     return jsonify({"email": user.email})
+
+
+@app.route("/reset_password", methods=["POST"], strict_slashes=False)
+def get_reset_password_token() -> str:
+    """POST /reset_password
+    """
+    email = request.form.get("email")
+    try:
+        reset_token = AUTH.get_reset_password_token(email)
+    except ValueError:
+        abort(403)
+    return jsonify({"email": email, "reset_token": reset_token})
 
 
 if __name__ == "__main__":
