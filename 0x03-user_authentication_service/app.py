@@ -2,7 +2,7 @@
 """A simple Flask app
 """
 import logging
-from flask import Flask, jsonify, request, abort
+from flask import Flask, jsonify, request, abort, redirect
 from auth import Auth
 logging.disable(logging.WARNING)
 AUTH = Auth()
@@ -42,6 +42,19 @@ def login() -> str:
     # Set a cookie with the session ID on the response
     response.set_cookie("session_id", session_id)
     return response
+
+
+@app.route("/sessions", methods=["DELETE"], strict_slashes=False)
+def logout() -> str:
+    """DELETE /sessions
+    """
+    session_id = request.cookies.get("session_id")
+    user = AUTH.get_user_from_session_id(session_id)
+    if user is None:
+        abort(403)
+    AUTH.destroy_session(user.id)
+    # Redirect to the home route
+    return redirect("/")
 
 
 if __name__ == "__main__":
