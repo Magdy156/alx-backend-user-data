@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """DB module
 """
+import logging
+from typing import Dict
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.session import Session
-from typing import Dict
-from user import Base, User
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.session import Session
+
+from user import Base, User
+
+logging.disable(logging.WARNING)
 
 
 class DB:
@@ -33,18 +38,17 @@ class DB:
         return self.__session
 
     def add_user(self, email: str, hashed_password: str) -> User:
-        """ saves user to DB
+        """saves user to DB
         """
-        session = self._session
+        new_user = User(email=email, hashed_password=hashed_password)
         try:
-            newUser = User(email=email, hashed_password=hashed_password)
-            session.add(newUser)
-            session.commit()
+            self._session.add(new_user)
+            self._session.commit()
         except Exception as e:
-            print(f"Error while adding user: {e}")
-            session.rollback()
+            print(f"Error adding user to database: {e}")
+            self._session.rollback()
             raise
-        return newUser
+        return new_user
 
     def find_user_by(self, **kwargs: Dict[str, str]) -> User:
         """Find a user by specified attributes.
@@ -57,3 +61,23 @@ class DB:
         except InvalidRequestError:
             raise InvalidRequestError()
         return user
+
+    def update_user(self, user_id: int, **kwargs) -> None:
+        """Updates a user's attributes by user ID and arbitrary keyword
+        """
+        # find the user
+        try:
+            user = self.find_user_by(id=user_id)
+        except NoResultFound:
+            raise ValueError(f"User with id {user_id} not found")
+
+        # Update user's attributes
+        for key, value in kwargs.items():
+            if not hasattr(user, key):
+                raise ValueError("User has no attribute {key}")
+            setattr(user, key, value)
+
+        try:
+            self._session.commit()
+        except InvalidRequestError:
+            raise ValueError("Invalid request")
